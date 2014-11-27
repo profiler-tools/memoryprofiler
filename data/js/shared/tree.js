@@ -3,15 +3,20 @@
   function TreeManager(option) {
     this._elements = option.elements;
     this.store = option.store;
+    this.treeFrag = document.createDocumentFragment();
   }
 
   TreeManager.prototype = {
     start: function tm_start() {
       window.addEventListener('dataReady', this);
+      window.addEventListener('reset-record', this);
+      window.addEventListener('subset-allocated', this);
     },
 
     stop: function tm_stop() {
       window.removeEventListener('dataReady', this);
+      window.removeEventListener('reset-record', this);
+      window.removeEventListener('subset-allocated', this);
     },
 
     handleEvent: function tm_handleEvent(event) {
@@ -19,17 +24,33 @@
         case 'dataReady':
           this.showTreeView();
           break;
+        case 'subset-allocated':
+          this.handleSubset();
+          break;
+        case 'reset-record':
+          this.cleanTreeView();
+          break;
         default:
           break;
       }
     },
 
+    handleSubset: function tm_handleSubset() {
+      console.log('subset-allocated handler!!');
+      //this.showTreeView();
+    },
+
     showTreeView: function tm_showTreeView() {
-      var treeData = this.store.getTreeData();
+      this.treeData = this.store.getTreeData();
       this.addTreeHeader();
-      this.addTreeNode(treeData.root, 0);
+      this.addTreeNode(this.treeData[0], 0);
+      this._elements.treePanel.innerHTML = this.treeFrag.innerHTML;
       this.addNodeEventListener();
       // this.collapseRoot();
+    },
+
+    cleanTreeView: function tm_cleanTreeView() {
+      this._elements.treePanel.innerHTML = '';
     },
 
     addTreeHeader: function tm_addTreeHeader() {
@@ -42,29 +63,29 @@
         '<span>totalPeak</span>' +
         '<span>name</span>' +
         '</div>';
-      this._elements.treePanel.innerHTML = treeHeader;
+      this.treeFrag.innerHTML = treeHeader;
     },
 
     addTreeNode: function tm_walk(node, depth) {
       var nodeClass = node.children.length > 0 ? 'treeNode' : 'treeNode leaf';
       var treeNode = '';
       treeNode = '<div class="' + nodeClass + '" data-depth="' + depth +'">' +
-        '<span>' + node.matrix.selfAccu + '</span>' +
-        '<span>' + node.matrix.totalAccu + '</span>' +
-        '<span>' + node.matrix.selfSize + '</span>' +
-        '<span>' + node.matrix.totalSize + '</span>' +
-        '<span>' + node.matrix.selfPeak + '</span>' +
-        '<span>' + node.matrix.totalPeak + '</span>' +
+        '<span>' + humanReadable(node.matrix.selfAccu) + '</span>' +
+        '<span>' + humanReadable(node.matrix.totalAccu) + '</span>' +
+        '<span>' + humanReadable(node.matrix.selfSize) + '</span>' +
+        '<span>' + humanReadable(node.matrix.totalSize) + '</span>' +
+        '<span>' + humanReadable(node.matrix.selfPeak) + '</span>' +
+        '<span>' + humanReadable(node.matrix.totalPeak) + '</span>' +
         '<span>' +
         '<span style="margin-left:' + depth + 'em;"' +
         ' class="collapseButton" title="Expand / Collapse"></span>' +
         '<span title="' + node.name + '">' + node.name + '</span>' +
-        '</span>'
+        '</span>' +
         '</div>';
-      this._elements.treePanel.innerHTML += treeNode;
+      this.treeFrag.innerHTML += treeNode;
       if (node.children.length > 0) {
         for (var i in node.children) {
-          this.addTreeNode(node.children[i], depth + 1);
+          this.addTreeNode(this.treeData[node.children[i]], depth + 1);
         }
       }
     },
