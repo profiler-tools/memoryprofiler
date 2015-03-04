@@ -37,6 +37,19 @@
         return this.getJSON('resource/allocated.json');
       },
 
+      getResults: function MP_getResults () {
+        var getFns = [];
+        getFns.push(this.getFrameNameTable());
+        getFns.push(this.getStacktraceTable());
+        getFns.push(this.getAllocatedEntries());
+        return Promise.all(getFns).then(function (results) {
+          var memInfo = { names: results[0],
+                          traces: results[1],
+                          events: results[2]};
+          return memInfo;
+        });
+      },
+
       getJSON: function MP_getJSON(url) {
         return new Promise(function(resolve, reject) {
           var xhr = new XMLHttpRequest();
